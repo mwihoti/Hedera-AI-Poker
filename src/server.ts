@@ -3,6 +3,7 @@ import path from 'path';
 import express, { type ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import { gameRouter } from './routes/game';
+import { paidAgentRouter } from './routes/paidAgent';
 import { tableRouter } from './routes/table';
 import { txRouter } from './routes/tx';
 
@@ -28,6 +29,9 @@ app.get('/api', (_req, res) => {
       'GET /table/:id/price',
       'GET /table/:id/advice',
       'GET /table/:id/explain',
+      'GET /agent/paid-report/:id',
+      'POST /agent/paid-report/:id/pay',
+      'GET /agent/executions/:txId',
       'POST /game/:id/join',
       'POST /tx/confirm',
       'POST /game/:id/action',
@@ -41,6 +45,7 @@ app.get('/health', (_req, res) => {
 
 app.use(gameRouter);
 app.use(tableRouter);
+app.use(paidAgentRouter);
 app.use(txRouter);
 
 const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {

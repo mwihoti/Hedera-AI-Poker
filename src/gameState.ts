@@ -5,7 +5,7 @@ export type Rank = '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | 'T' | 'J' | '
 export type Card = `${Rank}${Suit}`;
 export type GamePhase = 'waiting' | 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'complete';
 export type PokerAction = 'fold' | 'call' | 'check' | 'raise';
-export type PendingTxPurpose = 'buy-in' | 'winner-payout';
+export type PendingTxPurpose = 'buy-in' | 'winner-payout' | 'agent-execution';
 export type PendingTxStatus = 'pending' | 'confirmed';
 
 export interface PlayerState {
@@ -35,6 +35,17 @@ export interface PendingTx {
   hederaTxId?: string;
   playerId?: string;
   winnerIndex?: number;
+  service?: 'premium-report';
+}
+
+export interface PaidExecution {
+  id: string;
+  gameId: string;
+  txId: string;
+  hederaTxId?: string;
+  service: 'premium-report';
+  result: string;
+  createdAt: string;
 }
 
 export interface GameState {
@@ -52,9 +63,11 @@ export interface GameState {
 }
 
 export const BUY_IN_HBAR = 0.5;
+export const PREMIUM_REPORT_HBAR = 0.1;
 export const STARTING_CHIPS = 1000;
 export const games = new Map<string, GameState>();
 export const pendingTxs = new Map<string, PendingTx>();
+export const paidExecutions = new Map<string, PaidExecution>();
 
 export function createGameState(tokenId?: string, tokenTxId?: string): GameState {
   const game: GameState = {

@@ -267,6 +267,49 @@ export async function explainTable(game: GameState): Promise<TableExplanation> {
   }
 }
 
+export async function generatePremiumReport(game: GameState): Promise<TableExplanation> {
+  const human = game.players[0];
+  const amountToCall = Math.max(...game.players.map((candidate) => candidate.bet)) - human.bet;
+  const prompt = [
+    'Create a paid premium Texas Holdem report for this Hedera AI Poker hand.',
+    'Use concise sections: Table State, Player Comparison, Best Current Move, Payment Execution Proof.',
+    'Explain every visible player hand, likely winner from visible cards, and why the recommendation is commercially valuable.',
+    'Mention that the report was executed only after confirmed HBAR payment.',
+    `Phase: ${game.phase}`,
+    `Pot HBAR: ${game.pot}`,
+    `Human cards: ${human.holeCards.join(' ') || 'not dealt yet'}`,
+    `Human chips: ${human.chips}`,
+    `Human current bet: ${human.bet}`,
+    `Amount to call: ${amountToCall}`,
+    `Community cards: ${game.communityCards.join(' ') || 'none yet'}`,
+    `Players: ${game.players.map((player) => `${player.name} cards=${player.holeCards.join(' ') || 'none'} chips=${player.chips} bet=${player.bet} folded=${player.folded}`).join('; ')}`,
+    `Recent log: ${game.log.slice(-10).map((entry) => entry.message).join(' | ') || 'none'}`,
+  ].join('\n');
+
+  try {
+    const result = await callLlama({
+      system: 'You are a premium poker analytics agent. Return plain text only.',
+      prompt,
+      maxTokens: 420,
+      temperature: 0.28,
+    });
+
+    if (result.text?.trim()) {
+      return { explanation: result.text.trim(), model: result.model };
+    }
+
+    return {
+      explanation: fallbackPremiumReport(game, amountToCall),
+      model: result.model,
+    };
+  } catch (error) {
+    return {
+      explanation: `${fallbackPremiumReport(game, amountToCall)}\n\nLlama fallback note: ${error instanceof Error ? error.message : String(error)}`,
+      model: `${llamaSettings().model} (fallback)`,
+    };
+  }
+}
+
 function fallbackTableExplanation(game: GameState, amountToCall: number): string {
   const human = game.players[0];
   const board = game.communityCards.length ? game.communityCards.join(' ') : 'no community cards yet';
@@ -280,6 +323,23 @@ function fallbackTableExplanation(game: GameState, amountToCall: number): string
     `- Current visible favorite: ${strongest}. Preflop odds are only an estimate because the flop, turn, and river can change everything.`,
     `- Bets: you have ${human.bet} chips committed; the amount to call is ${amountToCall}.`,
     '- Buttons: Check if no call is required, Call to match the current bet, Raise 25 to add pressure, or Fold to exit the hand.',
+  ].join('\n');
+}
+
+function fallbackPremiumReport(game: GameState, amountToCall: number): string {
+  const human = game.players[0];
+  return [
+    'Table State',
+    `The hand is in ${game.phase}. The pot is ${game.pot} HBAR, your visible hand is ${human.holeCards.join(' ') || 'not dealt'}, and the board is ${game.communityCards.join(' ') || 'not dealt yet'}.`,
+    '',
+    'Player Comparison',
+    game.players.map((player) => `${player.name}: ${player.holeCards.join(' ') || 'not dealt'} with ${player.chips} chips and ${player.bet} committed.`).join('\n'),
+    '',
+    'Best Current Move',
+    `The current amount to call is ${amountToCall}. ${estimateVisibleLeader(game)} based on visible starting-card shape.`,
+    '',
+    'Payment Execution Proof',
+    'This report is generated only after the HBAR payment confirmation route settles the paid action.',
   ].join('\n');
 }
 

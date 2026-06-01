@@ -18,6 +18,8 @@ const els = {
   explainText: document.querySelector('#explainText'),
   advice: document.querySelector('#advice'),
   adviceText: document.querySelector('#adviceText'),
+  paidReport: document.querySelector('#paidReport'),
+  paidText: document.querySelector('#paidText'),
   actions: document.querySelectorAll('[data-action]'),
   gameId: document.querySelector('#gameId'),
   tokenId: document.querySelector('#tokenId'),
@@ -73,6 +75,7 @@ function renderTable(table) {
   });
   els.advice.disabled = !table.id || table.phase === 'waiting';
   els.explain.disabled = !table.id || table.phase === 'waiting';
+  els.paidReport.disabled = !table.id || table.phase === 'waiting';
 }
 
 function nextStepForPhase(phase) {
@@ -141,6 +144,23 @@ els.explain.addEventListener('click', async () => {
   }
 });
 
+els.paidReport.addEventListener('click', async () => {
+  try {
+    const playerAccountId = els.playerAccount.value.trim();
+    if (!playerAccountId) throw new Error('Enter your Hedera account ID');
+    setStatus('Queueing paid agent execution...');
+    const result = await api(`/agent/paid-report/${state.gameId}/pay`, {
+      method: 'POST',
+      body: JSON.stringify({ playerAccountId }),
+    });
+    els.paidText.textContent = 'Payment queued. Confirm the 0.1 HBAR payment to execute the premium report.';
+    showPendingTx(result.pending_tx);
+    setStatus('Confirm paid report payment');
+  } catch (error) {
+    setStatus(error.message);
+  }
+});
+
 els.join.addEventListener('click', async () => {
   try {
     const playerAccountId = els.playerAccount.value.trim();
@@ -162,12 +182,15 @@ els.confirmTx.addEventListener('click', async (event) => {
   try {
     if (!state.pendingTx) throw new Error('No pending transaction');
     setStatus('Submitting transfer...');
-    await api('/tx/confirm', {
+    const confirmation = await api('/tx/confirm', {
       method: 'POST',
       body: JSON.stringify({ txId: state.pendingTx.txId }),
     });
     els.confirmDialog.close();
     state.pendingTx = null;
+    if (confirmation.paid_execution) {
+      els.paidText.textContent = confirmation.paid_execution.result;
+    }
     const table = await api(`/table/${state.gameId}`);
     renderTable(table);
     setStatus('Transfer confirmed');

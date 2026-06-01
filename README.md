@@ -4,6 +4,23 @@ Hedera AI Poker is an enterprise-agent demo for the Hedera AI Bounty Week 2: **E
 
 The app uses Hedera Agent Kit v4, a third-party Pyth plugin, and a custom poker plugin. It demonstrates tokenization, payments, plugin extensibility, AI table explanation, and real testnet transactions.
 
+## x402 / Paid Agent Mode
+
+The app also includes a paid-execution agent flow for the MCP/x402-style bounty track.
+
+`GET /agent/paid-report/:gameId` returns HTTP `402 Payment Required` with a `PAYMENT-REQUIRED` header containing base64 payment requirements. The requirements describe a paid premium poker analytics report.
+
+The browser uses the HBAR execution path:
+
+1. User clicks **Pay 0.1 HBAR Report**.
+2. `POST /agent/paid-report/:gameId/pay` queues a pending HBAR payment.
+3. The user confirms the payment in the UI.
+4. `POST /tx/confirm` calls `TRANSFER_HBAR_TOOL`.
+5. Only after the HBAR transfer succeeds, the premium Llama report executes.
+6. The paid report is returned in the same confirmation response.
+
+This creates a tightly coupled payment-execution flow: no payment means no premium agent output.
+
 ## What It Does
 
 - Creates a `POKER CHIPS` HTS fungible token when a new game starts.
@@ -13,6 +30,7 @@ The app uses Hedera Agent Kit v4, a third-party Pyth plugin, and a custom poker 
 - Uses Llama for AI opponents, player advice, and table explanation.
 - Requires explicit confirmation before any HBAR transfer.
 - Pays the winner from the pot account after showdown.
+- Offers a paid premium Llama report that executes only after a 0.1 HBAR payment.
 
 ## Bounty Requirements
 
@@ -22,6 +40,7 @@ The app uses Hedera Agent Kit v4, a third-party Pyth plugin, and a custom poker 
 | Built with Hedera Agent Kit | `@hashgraph/hedera-agent-kit` + `HederaLangchainToolkit` |
 | Two non-query Hedera tools | `CREATE_FUNGIBLE_TOKEN_TOOL`, `TRANSFER_HBAR_TOOL` |
 | Commercial transaction | 0.5 HBAR buy-in and winner payout |
+| Paid execution flow | 0.1 HBAR premium report payment triggers Llama execution |
 | Third-party plugin | `hak-pyth-plugin` for HBAR/USD |
 | Custom plugin | `pokerPlugin` for deal/evaluate tools |
 | Human-in-the-loop safety | pending transaction modal + `/tx/confirm` |
@@ -109,6 +128,7 @@ LLAMA_CLOUD_API_KEY=...
 LLAMA_CLOUD_BASE_URL=https://api.llama.com/compat/v1
 LLAMA_CLOUD_MODEL=Llama-3.3-70B-Instruct
 PORT=3001
+BLOCKY402_FACILITATOR_URL=https://api.testnet.blocky402.com/v1
 ```
 
 Run:
@@ -135,7 +155,8 @@ Get free Hedera testnet accounts and HBAR from https://portal.hedera.com.
 6. Use **Explain Table** to understand the cards and game state.
 7. Use **Ask Llama** for a suggested move.
 8. Play through preflop, flop, turn, and river.
-9. Confirm the winner payout when the hand ends.
+9. Click **Pay 0.1 HBAR Report** to trigger the paid agent flow.
+10. Confirm the winner payout when the hand ends.
 
 ## API Quick Start
 
@@ -144,6 +165,10 @@ curl -X POST http://localhost:3001/game/new
 curl http://localhost:3001/table/<gameId>/price
 curl http://localhost:3001/table/<gameId>/explain
 curl http://localhost:3001/table/<gameId>/advice
+curl -i http://localhost:3001/agent/paid-report/<gameId>
+curl -X POST http://localhost:3001/agent/paid-report/<gameId>/pay \
+  -H 'content-type: application/json' \
+  -d '{"playerAccountId":"0.0.xxxxxxx"}'
 curl -X POST http://localhost:3001/game/<gameId>/join \
   -H 'content-type: application/json' \
   -d '{"playerAccountId":"0.0.xxxxxxx"}'
@@ -164,6 +189,8 @@ curl -X POST http://localhost:3001/game/<gameId>/action \
 - Confirm buy-in fires `TRANSFER_HBAR_TOOL`.
 - HashScan shows player to pot HBAR transfer.
 - Use **Explain Table** and **Ask Llama**.
+- Use **Pay 0.1 HBAR Report** to show paid execution.
+- Show the `402 Payment Required` response from `/agent/paid-report/:id`.
 - Play through multiple streets.
 - Winner payout appears as a pending transaction.
 - Confirm payout fires `TRANSFER_HBAR_TOOL`.

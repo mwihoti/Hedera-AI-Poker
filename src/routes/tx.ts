@@ -1,7 +1,9 @@
 import { Router } from 'express';
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { transferHbar } from '../agent';
-import { BUY_IN_HBAR, addLog, requireGame, requirePendingTx } from '../gameState';
+import { generatePremiumReport } from '../agentPlayers';
+import { BUY_IN_HBAR, addLog, paidExecutions, requireGame, requirePendingTx } from '../gameState';
 import { startHand } from './game';
 
 export const txRouter = Router();
@@ -39,6 +41,29 @@ txRouter.post('/tx/confirm', async (req, res, next) => {
       game.phase = 'complete';
       game.pot = 0;
       addLog(game, `Winner payout confirmed on Hedera: ${transfer.hederaTxId ?? 'transaction submitted'}.`);
+    }
+
+    if (pendingTx.purpose === 'agent-execution' && pendingTx.service === 'premium-report') {
+      const report = await generatePremiumReport(game);
+      const execution = {
+        id: randomUUID(),
+        gameId: game.id,
+        txId: pendingTx.txId,
+        hederaTxId: transfer.hederaTxId,
+        service: 'premium-report' as const,
+        result: report.explanation,
+        createdAt: new Date().toISOString(),
+      };
+      paidExecutions.set(pendingTx.txId, execution);
+      addLog(game, `Paid premium report executed after HBAR payment: ${pendingTx.txId}.`);
+      res.json({
+        confirmed: true,
+        hederaTxId: transfer.hederaTxId,
+        pending_tx: pendingTx,
+        paid_execution: execution,
+        raw: transfer.raw,
+      });
+      return;
     }
 
     res.json({ confirmed: true, hederaTxId: transfer.hederaTxId, pending_tx: pendingTx, raw: transfer.raw });

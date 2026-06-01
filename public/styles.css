@@ -228,7 +228,7 @@ dt {
 }
 
 .details {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .details > div {
@@ -263,6 +263,7 @@ li {
 
 #explainText,
 #adviceText,
+#paidText,
 .help {
   margin-top: 1rem;
   white-space: pre-line;
