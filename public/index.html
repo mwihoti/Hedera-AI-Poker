@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hedera AI Poker</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="topbar">
+        <div>
+          <h1>Hedera AI Poker</h1>
+          <p>Enterprise Agent + Plugin demo on Hedera testnet</p>
+        </div>
+        <div class="status" id="status">Ready</div>
+      </section>
+
+      <section class="controls">
+        <button id="newGame">Create Game + POKER Token</button>
+        <button id="price" disabled>Get HBAR/USD</button>
+        <label>
+          Player account
+          <input id="playerAccount" placeholder="0.0.xxxxxxx" />
+        </label>
+        <button id="join" disabled>Join Table</button>
+      </section>
+
+      <section class="table-wrap">
+        <div class="table">
+          <div class="pot">
+            <span>Pot</span>
+            <strong id="pot">0 HBAR</strong>
+            <small id="priceText">Buy in price not loaded</small>
+          </div>
+          <div class="community" id="community"></div>
+          <div class="players" id="players"></div>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button id="explain" disabled>Explain Table</button>
+        <button id="advice" disabled>Ask Llama</button>
+        <button data-action="check" disabled>Check</button>
+        <button data-action="call" disabled>Call</button>
+        <button data-action="raise" disabled>Raise 25</button>
+        <button data-action="fold" disabled>Fold</button>
+      </section>
+
+      <section class="details">
+        <div>
+          <h2>Game</h2>
+          <dl>
+            <dt>Game ID</dt>
+            <dd id="gameId">-</dd>
+            <dt>POKER Token</dt>
+            <dd id="tokenId">-</dd>
+            <dt>Phase</dt>
+            <dd id="phase">-</dd>
+            <dt>Next step</dt>
+            <dd id="nextStep">Create a game</dd>
+          </dl>
+        </div>
+        <div>
+          <h2>Llama Advice</h2>
+          <p id="adviceText">Ask after the hand is dealt.</p>
+        </div>
+        <div>
+          <h2>Table Read</h2>
+          <p id="explainText">Click Explain Table after the hand is dealt.</p>
+        </div>
+        <div>
+          <h2>How Poker Works</h2>
+          <p class="help">
+            Make the best 5-card hand from your 2 cards plus the shared board. Strong hands beat weak hands:
+            pair, two pair, three of a kind, straight, flush, full house, four of a kind, straight flush.
+          </p>
+        </div>
+        <div>
+          <h2>Table Log</h2>
+          <ol id="log"></ol>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="confirmDialog">
+      <form method="dialog" class="modal">
+        <h2>Confirm Hedera Transfer</h2>
+        <p id="confirmText"></p>
+        <div class="modal-actions">
+          <button value="cancel">Cancel</button>
+          <button id="confirmTx" value="confirm">Confirm</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
