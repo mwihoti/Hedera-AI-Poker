@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@hashgraph/hedera-agent-kit": "^4.0.0",
-    "@hashgraph/hedera-agent-kit-langchain": "^1.0.0",
+    "@hashgraph/hedera-agent-kit-langchain": "^2.1.0",
     "@hiero-ledger/sdk": "^2.84.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
